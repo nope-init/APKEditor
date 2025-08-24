@@ -61,6 +61,14 @@ public class AndroidManifestHelper {
                     || value.startsWith("com.android.stamp.");
         }));
     }
+    
+    public static List<ResXmlElement> listPairipLicensecheck(ResXmlElement parentElement) {
+        return parentElement == null ? EmptyList.of() : CollectionUtil.toList(parentElement.getElements(element -> {
+            ResXmlAttribute nameAttribute;
+            String value;
+            return (element.equalsName(AndroidManifest.TAG_activity) || element.equalsName(AndroidManifest.TAG_provider)) && (nameAttribute = (ResXmlAttribute) CollectionUtil.getFirst(element.getAttributes(NAME_FILTER))) != null && (value = nameAttribute.getValueAsString()) != null && value.startsWith("com.pairip.licensecheck.");
+        }));
+    }
 
     public static void removeAttributeFromManifestByName(AndroidManifestBlock androidManifestBlock,
                                                                  String resourceName, APKLogger logger){

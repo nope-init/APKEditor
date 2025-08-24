@@ -152,7 +152,7 @@ public class Options {
         return builder.build();
     }
 
-    public static final int PRINT_WIDTH = 80;
+    public static final int PRINT_WIDTH = 200;
 
 
     public static final String TYPE_SIG = "sig";

@@ -41,12 +41,15 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Predicate;
 
+import com.reandroid.apkeditor.utils.ManifestUtils;
+
+
 public class Merger extends CommandExecutor<MergerOptions> {
 
     public Merger(MergerOptions options){
         super(options, "[MERGE] ");
     }
-
+    
     @Override
     public void runCommand() throws IOException {
         MergerOptions options = getOptions();
@@ -86,7 +89,9 @@ public class Merger extends CommandExecutor<MergerOptions> {
         sanitizeManifest(mergedModule);
         mergedModule.refreshTable();
         mergedModule.refreshManifest();
-        applyExtractNativeLibs(mergedModule, options.getExtractNativeLibs());
+        ManifestUtils.applySetMetaOptions(mergedModule, ManifestUtils.from(options), this::logMessage);
+        
+applyExtractNativeLibs(mergedModule, options.getExtractNativeLibs());
         logMessage("Writing apk ...");
         mergedModule.writeApk(options.outputFile);
         mergedModule.close();
@@ -138,39 +143,39 @@ public class Merger extends CommandExecutor<MergerOptions> {
         return tmp;
     }
     private void sanitizeManifest(ApkModule apkModule) {
-        if(!apkModule.hasAndroidManifest()){
-            return;
-        }
-        AndroidManifestBlock manifest = apkModule.getAndroidManifest();
-        logMessage("Sanitizing manifest ...");
-
-        AndroidManifestHelper.removeAttributeFromManifestById(manifest,
-                AndroidManifest.ID_requiredSplitTypes, this);
-        AndroidManifestHelper.removeAttributeFromManifestById(manifest,
-                AndroidManifest.ID_splitTypes, this);
-        AndroidManifestHelper.removeAttributeFromManifestByName(manifest,
-                AndroidManifest.NAME_splitTypes, this);
-
-        AndroidManifestHelper.removeAttributeFromManifestByName(manifest,
-            AndroidManifest.NAME_requiredSplitTypes, this);
-        AndroidManifestHelper.removeAttributeFromManifestByName(manifest,
-            AndroidManifest.NAME_splitTypes, this);
-        AndroidManifestHelper.removeAttributeFromManifestAndApplication(manifest,
-                AndroidManifest.ID_isSplitRequired,
-                this, AndroidManifest.NAME_isSplitRequired);
-        ResXmlElement application = manifest.getApplicationElement();
-        List<ResXmlElement> splitMetaDataElements =
-                AndroidManifestHelper.listSplitRequired(application);
-        boolean splits_removed = false;
-        for(ResXmlElement meta : splitMetaDataElements){
-            if(!splits_removed){
-                splits_removed = removeSplitsTableEntry(meta, apkModule);
+        if (apkModule.hasAndroidManifest()) {
+            AndroidManifestBlock manifest = apkModule.getAndroidManifest();
+            logMessage("Sanitizing manifest ...");
+            AndroidManifestHelper.removeAttributeFromManifestById(manifest, AndroidManifest.ID_requiredSplitTypes, this);
+            AndroidManifestHelper.removeAttributeFromManifestById(manifest, AndroidManifest.ID_splitTypes, this);
+            AndroidManifestHelper.removeAttributeFromManifestByName(manifest, AndroidManifest.NAME_splitTypes, this);
+            AndroidManifestHelper.removeAttributeFromManifestByName(manifest, AndroidManifest.NAME_requiredSplitTypes, this);
+            AndroidManifestHelper.removeAttributeFromManifestByName(manifest, AndroidManifest.NAME_splitTypes, this);
+            AndroidManifestHelper.removeAttributeFromManifestAndApplication(manifest, AndroidManifest.ID_isSplitRequired, this, AndroidManifest.NAME_isSplitRequired);
+            ResXmlElement application = manifest.getApplicationElement();
+            List<ResXmlElement> splitMetaDataElements = AndroidManifestHelper.listSplitRequired(application);
+            boolean splits_removed = false;
+            for (ResXmlElement meta : splitMetaDataElements) {
+                if (!splits_removed) {
+                    splits_removed = removeSplitsTableEntry(meta, apkModule);
+                }
+                logMessage("Removed-element : <" + meta.getName() + "> name=\"" + AndroidManifestBlock.getAndroidNameValue(meta) + "\"");
+                application.remove(meta);
             }
-            logMessage("Removed-element : <" + meta.getName() + "> name=\""
-                    + AndroidManifestBlock.getAndroidNameValue(meta) + "\"");
-            application.remove(meta);
+            List<ResXmlElement> licensecheckElements = AndroidManifestHelper.listPairipLicensecheck(application);
+            if (!licensecheckElements.isEmpty()) {
+                for (ResXmlElement elem : licensecheckElements) {
+                    logMessage("Removed-element : <" + elem.getName() + "> name=\"" + AndroidManifestBlock.getAndroidNameValue(elem) + "\"");
+                    application.remove(elem);
+                }
+                ResXmlElement usesPermission = manifest.getUsesPermission("com.android.vending.CHECK_LICENSE");
+                if (usesPermission != null) {
+                    logMessage("Removed-element : <" + usesPermission.getName() + "> name=\"" + AndroidManifestBlock.getAndroidNameValue(usesPermission) + "\"");
+                    manifest.getManifestElement().remove(usesPermission);
+                }
+            }
+            manifest.refresh();
         }
-        manifest.refresh();
     }
     private boolean removeSplitsTableEntry(ResXmlElement metaElement, ApkModule apkModule) {
         ResXmlAttribute nameAttribute = metaElement.searchAttributeByResourceId(AndroidManifest.ID_name);

@@ -61,7 +61,7 @@ public class CommandExecutor<T extends Options> implements APKLogger, XmlCoderLo
     protected T getOptions() {
         return options;
     }
-
+    
     protected void applyExtractNativeLibs(ApkModule apkModule, String extractNativeLibs) {
         if (extractNativeLibs != null) {
             Boolean value;

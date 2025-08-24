@@ -21,6 +21,9 @@ import com.reandroid.jcommand.annotations.CommandOptions;
 import com.reandroid.jcommand.annotations.OptionArg;
 
 import java.io.File;
+import java.util.List;
+import java.util.ArrayList;
+
 
 
 @CommandOptions(
@@ -32,6 +35,12 @@ import java.io.File;
         })
 public class MergerOptions extends Options {
 
+   // Example: -setMeta com.google.android.geo.API_KEY=AIza...  (can be repeated)
+    @OptionArg(
+        name = "-setMeta",
+        description = "Set <meta-data> value by name in AndroidManifest.xml. Syntax: NAME=VALUE (repeatable)"
+    )
+    public List<String> setMeta = new ArrayList<>();
 
     @ChoiceArg(
             name = "-extractNativeLibs",

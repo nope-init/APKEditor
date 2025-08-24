@@ -31,6 +31,9 @@ import com.reandroid.arsc.coder.xml.XmlCoder;
 import java.io.File;
 import java.io.IOException;
 
+import com.reandroid.apkeditor.utils.ManifestUtils;
+
+
 public class Builder extends CommandExecutor<BuildOptions> {
 
     public Builder(BuildOptions options){
@@ -141,6 +144,8 @@ public class Builder extends CommandExecutor<BuildOptions> {
     private void writeApk(ApkModule apkModule) throws IOException {
         BuildOptions options = getOptions();
         if (!Options.TYPE_RAW.equals(options.type) && !Options.TYPE_SIG.equals(options.type)) {
+        ManifestUtils.applySetMetaOptions(apkModule, ManifestUtils.from(options), this::logMessage);
+
             applyExtractNativeLibs(apkModule, options.getExtractNativeLibs());
         }
         logMessage("Writing apk...");
